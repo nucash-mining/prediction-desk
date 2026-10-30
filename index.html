@@ -199,10 +199,10 @@ function render() {
   }).join('') || '<div class="empty">Nothing waiting. Signals appear here.</div>';
 
   $('positions').innerHTML = S.positions.map(p => `<div class="card"><h3>${venue(p.venue)}<a href="${esc(p.url)}" target="_blank">${esc(p.title)}</a></h3>
-    <div class="row"><div>${p.qty} ${p.outcome.toUpperCase()} · avg ${c(p.avg)} · bid ${c(p.bid)}</div><span class="sp"></span>
+    <div class="row"><div>${p.qty} ${p.outcome.toUpperCase()} · avg ${c(p.avg)} · ${p.bid ? 'bid ' + c(p.bid) : `<span class="a">no bid</span> · last ${c(p.mark)}`}</div><span class="sp"></span>
     <b class="${sgn(p.pnl)}">${usd(p.pnl)}${p.pnl_pct != null ? ` <span class="dim">${(p.pnl_pct * 100).toFixed(0)}%</span>` : ''}</b></div>
     <div class="dim">${exitLine(p)}</div>
-    <div class="btns"><button class="sm" onclick="if(confirm('Sell all ${p.qty} at the bid?'))act('close',{ticker:'${esc(p.ticker)}',outcome:'${p.outcome}'},this)">Sell all @ ${c(p.bid)}</button>
+    <div class="btns">${p.bid ? `<button class="sm" onclick="if(confirm('Sell all ${p.qty} at the bid?'))act('close',{ticker:'${esc(p.ticker)}',outcome:'${p.outcome}'},this)">Sell all @ ${c(p.bid)}</button>` : '<button class="sm" disabled>No buyers right now</button>'}
     <button class="sm no" onclick="editExit('${esc(p.ticker)}','${p.outcome}',${p.tp},${p.sl})">Set TP / SL</button></div></div>`).join('')
     || '<div class="empty">No open positions.</div>';
 

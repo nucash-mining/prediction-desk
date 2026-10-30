@@ -397,7 +397,7 @@ function renderPositions() {
     const w = Math.round(50 * Math.abs(p.pnl || 0) / max), pos = (p.pnl || 0) >= 0;
     return `<div class="pos"><div class="row"><span style="min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${ven(p.venue)}<a href="${esc(p.url)}" target="_blank">${esc(p.title)}</a></span>
       <b class="mono ${pos ? 'g' : 'r'}">${usd(p.pnl)}</b></div>
-      <div class="dim mono" style="font-size:11px">${p.qty} ${p.outcome.toUpperCase()} · avg ${c(p.avg)} → bid ${c(p.bid)}${p.runner ? ' · <span class="c">runner</span>' : ''}${p.pnl_pct != null ? ' · ' + Math.round(p.pnl_pct * 100) + '%' : ''}</div>
+      <div class="dim mono" style="font-size:11px">${p.qty} ${p.outcome.toUpperCase()} · avg ${c(p.avg)} → ${p.bid ? 'bid ' + c(p.bid) : '<span class="a">no bid</span>, last ' + c(p.mark)}${p.runner ? ' · <span class="c">runner</span>' : ''}${p.pnl_pct != null ? ' · ' + Math.round(p.pnl_pct * 100) + '%' : ''}</div>
       <div class="pnlbar"><i style="left:${pos ? 50 : 50 - w}%;width:${w}%;background:${pos ? 'var(--green)' : 'var(--red)'}"></i><i style="left:50%;width:1px;background:var(--faint)"></i></div></div>`; }).join('')
     || '<div class="empty">no open positions</div>';
 }
