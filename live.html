@@ -48,7 +48,7 @@ header{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .spark{position:absolute;top:32px;height:4px;width:4px;border-radius:50%;background:var(--k);box-shadow:0 0 8px var(--k);animation:fly .7s linear forwards;z-index:2}
 @keyframes fly{from{transform:translateX(0);opacity:1}to{transform:translateX(var(--d));opacity:0}}
 /* 3D flow */
-.flow3d{position:relative;height:230px;background:radial-gradient(120% 140% at 50% 0%,#0d1a2b,#05070b 70%);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.flow3d{position:relative;height:360px;background:radial-gradient(120% 140% at 50% 0%,#0d1a2b,#05070b 70%);border:1px solid var(--line);border-radius:10px;overflow:hidden}
 .flow3d .hud{position:absolute;left:12px;top:9px;z-index:2;font:700 10.5px var(--mono);letter-spacing:.16em;color:var(--dim);pointer-events:none}
 .flow3d .hud b{color:var(--cyan);font-size:15px;letter-spacing:0;margin-left:6px}
 .flow3d .hint{position:absolute;right:12px;top:9px;z-index:2;font:10px var(--mono);color:var(--faint);pointer-events:none}
@@ -57,6 +57,8 @@ header{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .f3l b{display:block;font:700 9.5px var(--mono);letter-spacing:.16em;color:var(--k);text-shadow:0 0 8px var(--k)}
 .f3l i{display:block;font:700 13px var(--mono);font-style:normal;color:var(--text)}
 .f3l u{display:block;text-decoration:none;font-size:9.5px;color:var(--dim);max-width:110px;overflow:hidden;text-overflow:ellipsis}
+.f3sun b{font-size:11px;letter-spacing:.24em}.f3sun i{font-size:17px;color:var(--k);text-shadow:0 0 12px var(--k)}
+.f3sun u{max-width:220px;color:var(--text);opacity:.75}
 .grade{display:grid;grid-template-columns:96px 40px 1fr 62px;gap:6px;align-items:center;font:11px var(--mono);margin:3px 0}
 .st{font:700 9px var(--mono);letter-spacing:.08em;padding:1px 4px;border-radius:3px;text-align:center}
 .st.keep{color:var(--green);border:1px solid #22e39a55}.st.proving{color:var(--amber);border:1px solid #ffb02055}.st.paused{color:var(--red);border:1px solid #ff4d6d55}
@@ -114,7 +116,7 @@ pre.dossier .k{color:var(--cyan)}pre.dossier .m{color:var(--red)}
 input{width:100%;padding:10px;border-radius:8px;border:1px solid var(--line2);background:var(--bg);color:var(--text);font:13px var(--mono)}
 button{font:700 12px var(--mono);padding:9px 14px;border-radius:8px;border:1px solid var(--line2);background:var(--panel2);color:var(--text);cursor:pointer;margin-top:10px}
 @media (max-width:1100px){
-  .flow3d{height:min(70vw,380px)}.f3l u{display:none}
+  .flow3d{height:min(84vw,420px)}.f3l u{display:none}.f3sun u{display:block}
   body{overflow:auto}#app{height:auto}
   main{grid-template-columns:1fr}.panel{max-height:70vh}
   .pipe{grid-template-columns:repeat(4,1fr);row-gap:10px}.pipe::before{display:none}
@@ -455,6 +457,7 @@ async function poll() {
     if (r.status === 401) return showLogin();
     S = await r.json();
   } catch (e) { $('conn').classList.add('off'); return; }
+  if (window.F3D && S.clv) { window.F3D.setSun(S.clv.sun); window.F3D.setPlanets(S.clv.stages); }
   const s = S.summary, live = s.mode === 'live';
   $('mode').textContent = live ? 'LIVE' : 'PAPER'; $('mode').className = 'badge ' + (live ? 'live' : 'paper');
   const eq = live ? (s.balances.kalshi || 0) + (s.balances.polymarket || 0) + s.open_value : s.equity;
@@ -511,7 +514,7 @@ boot();
 <script type="module">
 import {createFlow3D} from './static/flow3d.js';
 const f = createFlow3D(document.getElementById('f3d'), STAGES);
-if (f) window.F3D = f;
+if (f) { window.F3D = f; try { if (S && S.clv) { f.setSun(S.clv.sun); f.setPlanets(S.clv.stages); } } catch (e) {} }
 else { document.getElementById('f3d').style.height = 'auto'; document.getElementById('pipe').style.display = ''; }  // no WebGL: flat pipeline
 </script>
 </body>
