@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<title>Prediction Trader</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#05070b;--card:#0b0f17;--card2:#0f1520;--line:#1a2333;--line2:#243049;--text:#d7e0ee;--dim:#6b7a93;--faint:#3a4760;
+  --green:#22e39a;--red:#ff4d6d;--amber:#ffb020;--blue:#60a5fa;--cyan:#22d3ee;--paper:#a78bfa;
+  --mono:'JetBrains Mono',ui-monospace,Menlo,monospace;--sans:Inter,-apple-system,system-ui,sans-serif}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.42 var(--sans);padding-bottom:calc(64px + env(safe-area-inset-bottom));
+  background-image:radial-gradient(700px 380px at 0% -5%,#0e2a3a40,transparent),radial-gradient(600px 340px at 100% 0%,#2a0e3a33,transparent);background-attachment:fixed}
+header{position:sticky;top:0;z-index:5;background:#05070bdd;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:10px 16px 10px}
+.row{display:flex;align-items:center;gap:8px}
+.sp{flex:1}
+.badge{font:700 10.5px var(--mono);padding:3px 8px;border-radius:4px;letter-spacing:.12em}
+.paper{background:#a78bfa1f;color:var(--paper);border:1px solid #a78bfa55} .live{background:#ff4d6d22;color:var(--red);border:1px solid #ff4d6d77}
+.big{font:700 22px var(--mono);letter-spacing:-.02em}
+.dim{color:var(--dim);font-size:12.5px}
+.mono{font-family:var(--mono)}
+.g{color:var(--green)} .r{color:var(--red)} .a{color:var(--amber)}
+main{padding:10px 16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px 12px;margin-bottom:8px}
+.card h3{margin:0 0 4px;font-size:14px;font-weight:600;line-height:1.3}
+.card a{color:var(--blue);text-decoration:none}
+h2{font:700 10.5px var(--mono);text-transform:uppercase;letter-spacing:.16em;color:var(--dim);margin:16px 0 7px;display:flex;align-items:center;gap:6px}
+h2:first-child{margin-top:4px}
+button{font:600 13px var(--sans);border:1px solid var(--line2);border-radius:8px;padding:9px 13px;cursor:pointer;background:var(--card2);color:var(--text)}
+button.go{background:#0f5a3c;border-color:#22e39a66} button.no{background:var(--card2)} button.warn{background:#5c1424;border-color:#ff4d6d77}
+button.sm{padding:6px 10px;font-size:12.5px}
+button:disabled{opacity:.45}
+.btns{display:flex;gap:6px;margin-top:9px;flex-wrap:wrap}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:#0b0f17f0;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);z-index:6}
+nav button{flex:1;background:none;border:0;border-radius:0;padding:8px 2px 9px;font:600 10.5px var(--mono);letter-spacing:.06em;color:var(--dim);display:flex;flex-direction:column;align-items:center;gap:2px}
+nav button i{font-style:normal;font-size:17px;line-height:1;filter:grayscale(1);opacity:.7}
+nav button.on{color:var(--cyan)} nav button.on i{filter:none;opacity:1}
+nav .cnt{background:var(--red);color:#fff;border-radius:99px;padding:0 5px;font-size:10px;position:absolute;margin:-4px 0 0 16px}
+.tab{display:none}.tab.on{display:block}
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:7px 12px;font-size:13.5px}
+.kv div span{display:block;color:var(--dim);font:10px var(--mono);letter-spacing:.08em;text-transform:uppercase}
+input{font:inherit;width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--line2);background:var(--bg);color:var(--text)}
+.pill{display:inline-block;font:700 9px var(--mono);padding:1px 5px;border-radius:3px;margin-right:5px;vertical-align:1px;letter-spacing:.04em}
+.pm{background:#60a5fa22;color:var(--blue)} .ks{background:#22e39a1c;color:var(--green)}
+#toast{position:fixed;left:16px;right:16px;bottom:calc(72px + env(safe-area-inset-bottom));background:#1b2333;padding:11px 12px;border-radius:9px;display:none;z-index:9;white-space:pre-wrap;font-size:13px}
+.empty{color:var(--faint);text-align:center;padding:18px 0;font:12px var(--mono)}
+.trunc{overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
+.one{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#login{padding:40px 16px}
+.fill{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid #ffffff08}
+.fill:last-child{border-bottom:0}
+.list{padding:0}
+.bar{height:5px;background:#ffffff0d;border-radius:3px;overflow:hidden;flex:1}
+.bar i{display:block;height:100%;background:var(--k);box-shadow:0 0 8px var(--k)}
+.st{font:700 9px var(--mono);letter-spacing:.08em;padding:2px 5px;border-radius:3px}
+.st.keep{color:var(--green);border:1px solid #22e39a55}.st.proving{color:var(--amber);border:1px solid #ffb02055}.st.paused{color:var(--red);border:1px solid #ff4d6d55}
+details summary{cursor:pointer;color:var(--dim);font-size:12px;margin-top:6px}
+pre.brief{white-space:pre-wrap;font:11.5px/1.5 var(--mono);color:#9fb0c8;margin:0}
+.live3d{display:flex;align-items:center;gap:10px;padding:12px;margin-bottom:8px;border-radius:10px;border:1px solid #22d3ee44;color:var(--text);text-decoration:none;
+  background:linear-gradient(110deg,#0b1a26,#140b26)}
+.live3d b{font:700 12px var(--mono);letter-spacing:.12em;color:var(--cyan)}
+</style>
+</head>
+<body>
+<div id="login" style="display:none">
+  <h2>Prediction Trader</h2>
+  <p class="dim">Paste the dashboard link from the computer (data/dashboard_url.txt), or enter the token:</p>
+  <input id="tok" placeholder="token"><div class="btns"><button class="go" onclick="saveTok()">Open</button></div>
+</div>
+<div id="app" style="display:none">
+<header>
+  <div class="row">
+    <span id="mode" class="badge paper">PAPER</span>
+    <span class="dim" id="hdr"></span>
+    <span class="sp"></span>
+    <button id="killbtn" class="sm warn" onclick="toggleKill()">KILL</button>
+  </div>
+  <div class="row" style="margin-top:7px;align-items:flex-end">
+    <div style="min-width:0"><div class="big" id="equity">—</div><div class="dim one" id="equitysub"></div></div>
+    <span class="sp"></span>
+    <div style="text-align:right"><div id="pnl" class="big" style="font-size:18px">—</div><div class="dim">open P&amp;L</div></div>
+  </div>
+</header>
+<main>
+  <section class="tab on" id="t-trade">
+    <h2>Waiting for approval</h2><div id="pending"></div>
+    <h2>Open positions</h2><div id="positions"></div>
+    <h2>Recent fills</h2><div id="history"></div>
+  </section>
+  <section class="tab" id="t-desk">
+    <h2>Strategy grades<span class="sp"></span><span id="gradehdr" style="letter-spacing:.04em;text-transform:none"></span></h2><div id="grades"></div>
+    <h2>Morning brief<span class="sp"></span><button class="sm" style="letter-spacing:0;text-transform:none" onclick="act('quant',{brief:true},this)">Make one now</button></h2>
+    <div class="card"><pre class="brief" id="brief"></pre><div id="weekly"></div></div>
+    <h2>AI judge</h2><div class="card kv" id="deskstat"></div>
+    <div class="btns"><button id="deskbtn" onclick="toggleDesk()">Pause judge</button></div>
+    <h2>Today</h2><div class="card kv" id="desktoday"></div>
+    <h2>Is the judge honest?</h2>
+    <div class="card"><div class="dim" style="margin-bottom:6px">"Buy" calls grouped by confidence. If 90%+ doesn't win more than 70%, the confidence means nothing yet.</div>
+    <table id="calib" style="width:100%;font-size:14px;border-collapse:collapse"></table>
+    <div class="dim" id="passline" style="margin-top:6px"></div></div>
+    <h2>Verdicts</h2><div id="verdicts"></div>
+  </section>
+  <section class="tab" id="t-sig">
+    <h2>Price signals</h2><div id="alerts"></div>
+    <h2>Headlines &amp; X</h2><div id="feed"></div>
+  </section>
+  <section class="tab" id="t-search">
+    <input id="q" placeholder="Search Kalshi + Polymarket markets…" oninput="debSearch()">
+    <div class="row" style="margin-top:8px"><span class="dim">Amount $</span><input id="usd" type="number" value="10" style="width:90px"></div>
+    <div id="results" style="margin-top:10px"></div>
+  </section>
+  <section class="tab" id="t-sys">
+    <a href="live.html" class="live3d"><span style="font-size:22px">🛰</span><span><b>LIVE 3D DESK ↗</b><br><span class="dim">watch data flow through the bot in real time</span></span></a>
+    <h2>Status</h2><div class="card kv" id="sys"></div>
+    <h2>Limits</h2><div class="card kv" id="lims"></div>
+    <div class="btns"><button id="stratbtn" onclick="toggleStrat()">Pause strategies</button></div>
+    <h2>Arbitrage · confirmed pairs</h2><div id="arbs"></div>
+    <h2>Possible matches (check the rules match!)</h2><div id="cands"></div>
+    <h2>Activity</h2><div class="card dim" id="activity" style="font:11.5px/1.5 var(--mono);white-space:pre-wrap"></div>
+  </section>
+</main>
+<nav>
+  <button class="on" data-t="trade"><i>💸</i>TRADE<span id="pcnt"></span></button>
+  <button data-t="desk"><i>⚖️</i>DESK</button>
+  <button data-t="sig"><i>⚡</i>SIGNALS</button>
+  <button data-t="search"><i>🔎</i>FIND</button>
+  <button data-t="sys"><i>☰</i>MORE</button>
+</nav>
+</div>
+<div id="toast"></div>
+<script>
+const API = (() => {  // same server, or the tunnel when this page is on GitHub Pages
+  const dflt = location.hostname.endsWith('github.io') ? 'https://trader.wattxchange.app' : '';
+  try { const q = new URLSearchParams(location.hash.slice(1)).get('api'); if (q) localStorage.setItem('pt_api', q); return q || localStorage.getItem('pt_api') || dflt; }
+  catch (e) { return dflt; }
+})();
+let TOKEN = '';
+try { TOKEN = localStorage.getItem('pt_token') || ''; } catch (e) {}
+const h = new URLSearchParams(location.hash.slice(1)).get('token');
+if (h) { TOKEN = h; try { localStorage.setItem('pt_token', h); } catch (e) {} history.replaceState(null, '', location.pathname); }
+let S = null;
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const c = p => p == null ? '—' : Math.round(p * 100) + '¢';
+const usd = v => v == null ? '—' : (v < 0 ? '-$' : '$') + Math.abs(v).toFixed(2);
+const sgn = v => v == null ? '' : v >= 0 ? 'g' : 'r';
+const ago = ts => { const s = Math.max(0, S.now - ts); return s < 60 ? Math.round(s) + 's' : s < 3600 ? Math.round(s / 60) + 'm' : Math.round(s / 3600) + 'h'; };
+const venue = v => v === 'polymarket' ? '<span class="pill pm">POLY</span>' : '<span class="pill ks">KALSHI</span>';
+
+function saveTok() { TOKEN = $('tok').value.trim().replace(/.*token=/, ''); try { localStorage.setItem('pt_token', TOKEN); } catch (e) {} boot(); }
+function toast(msg, bad) { const t = $('toast'); t.textContent = msg; t.style.background = bad ? '#6e1b1b' : '#1b4d2b'; t.style.display = 'block'; clearTimeout(t._h); t._h = setTimeout(() => t.style.display = 'none', 4500); }
+
+async function api(path, body) {
+  const r = await fetch(API + '/api/' + path, body === undefined ? {headers: {'X-Token': TOKEN}} :
+    {method: 'POST', headers: {'X-Token': TOKEN, 'Content-Type': 'application/json'}, body: JSON.stringify(body)});
+  if (r.status === 401) { $('app').style.display = 'none'; $('login').style.display = 'block'; throw new Error('bad token'); }
+  return r.json();
+}
+async function act(path, body, btn) {
+  if (btn) btn.disabled = true;
+  try { const r = await api(path, body); if (r.ok === false) toast(r.error, true); else toast(Array.isArray(r.msg) ? r.msg.join('\n') : (r.msg || 'Done')); }
+  catch (e) { toast(e.message, true); }
+  if (btn) btn.disabled = false;
+  refresh();
+}
+
+function render() {
+  const s = S.summary, live = s.mode === 'live';
+  $('mode').textContent = live ? 'LIVE' : 'PAPER'; $('mode').className = 'badge ' + (live ? 'live' : 'paper');
+  $('hdr').textContent = (S.status.exchange === 'trading' ? 'Kalshi open' : 'Kalshi ' + S.status.exchange);
+  $('killbtn').textContent = s.killed ? 'KILL ON' : 'KILL';
+  $('killbtn').className = 'sm ' + (s.killed ? 'warn' : 'no');
+  if (live) {
+    const b = s.balances;
+    $('equity').textContent = usd((b.kalshi || 0) + (b.polymarket || 0) + s.open_value);
+    $('equitysub').textContent = `Kalshi ${usd(b.kalshi)} · Poly ${usd(b.polymarket)} · today bought ${usd(s.daily_buys)}`;
+  } else {
+    $('equity').textContent = usd(s.equity);
+    $('equitysub').innerHTML = `paper cash ${usd(s.cash)} · total <span class="${sgn(s.total_pnl)}">${usd(s.total_pnl)}</span>`;
+  }
+  $('pnl').textContent = usd(s.unrealized); $('pnl').className = 'big ' + sgn(s.unrealized);
+  $('pcnt').innerHTML = S.pending.length ? `<span class="cnt">${S.pending.length}</span>` : '';
+
+  // pending (arb legs grouped)
+  const groups = {};
+  $('pending').innerHTML = S.pending.map(p => {
+    const moved = p.now != null && p.now > p.price + 0.005;
+    let grp = '';
+    if (p.group_id) { if (groups[p.group_id]) return ''; groups[p.group_id] = 1; grp = `<button class="go" onclick="act('approve',{group:'${p.group_id}'},this)">Approve BOTH legs</button>`; }
+    const legs = p.group_id ? S.pending.filter(x => x.group_id === p.group_id) : [p];
+    return `<div class="card">${legs.map(l => `<h3>${venue(l.venue)}<a href="${esc(l.url)}" target="_blank">${esc(l.title)}</a></h3>
+      <div>Buy <b>${l.count} ${l.outcome.toUpperCase()}</b> @ ${c(l.price)} = <b>${usd(l.usd)}</b> <span class="dim">now ${c(l.now)}</span></div>`).join('<hr style="border-color:#262c36">')}
+      <div class="dim trunc">${esc(p.reason)}</div><div class="dim">${ago(p.ts)} ago · ${p.kind}${moved ? ' · <span class="a">price moved</span>' : ''}</div>
+      <div class="btns">${grp || `<button class="go" onclick="act('approve',{id:${p.id}},this)">Approve</button>`}
+      ${legs.map(l => `<button class="no" onclick="act('reject',{id:${l.id}},this)">Reject${legs.length > 1 ? ' #' + l.id : ''}</button>`).join('')}</div></div>`;
+  }).join('') || '<div class="empty">Nothing waiting. Signals appear here.</div>';
+
+  $('positions').innerHTML = S.positions.map(p => `<div class="card"><h3>${venue(p.venue)}<a href="${esc(p.url)}" target="_blank">${esc(p.title)}</a></h3>
+    <div class="row"><div>${p.qty} ${p.outcome.toUpperCase()} · avg ${c(p.avg)} · bid ${c(p.bid)}</div><span class="sp"></span>
+    <b class="${sgn(p.pnl)}">${usd(p.pnl)}${p.pnl_pct != null ? ` <span class="dim">${(p.pnl_pct * 100).toFixed(0)}%</span>` : ''}</b></div>
+    <div class="dim">${exitLine(p)}</div>
+    <div class="btns"><button class="sm" onclick="if(confirm('Sell all ${p.qty} at the bid?'))act('close',{ticker:'${esc(p.ticker)}',outcome:'${p.outcome}'},this)">Sell all @ ${c(p.bid)}</button>
+    <button class="sm no" onclick="editExit('${esc(p.ticker)}','${p.outcome}',${p.tp},${p.sl})">Set TP / SL</button></div></div>`).join('')
+    || '<div class="empty">No open positions.</div>';
+
+  $('history').innerHTML = S.history.length ? '<div class="card list">' + S.history.slice(0, 15).map(t => `<div class="fill">
+    <b class="mono ${t.action === 'buy' ? 'g' : t.action === 'settle' ? (t.price > 0 ? 'g' : 'r') : 'a'}" style="font-size:11px;width:44px">${t.action.toUpperCase()}</b>
+    <div style="min-width:0;flex:1"><div class="one">${venue(t.venue)}${esc(t.title)}</div><div class="dim mono" style="font-size:11px">${t.count} ${t.outcome.toUpperCase()} @ ${c(t.price)} · ${usd(t.usd)}</div></div>
+    <span class="dim mono" style="font-size:11px">${ago(t.ts)}</span></div>`).join('') + '</div>'
+    : '<div class="empty">No fills yet.</div>';
+
+  $('alerts').innerHTML = S.alerts.map(a => `<div class="card"><div class="dim">${a.kind} · ${ago(a.ts)} ago</div>
+    <h3><a href="${esc(a.url)}" target="_blank">${esc(a.title)}</a></h3><div>${esc(a.detail)}</div>
+    ${(a.headlines || []).map(x => `<div class="dim trunc">• <a href="${esc(x[1])}" target="_blank">${esc(x[0])}</a> ${esc(x[2] || '')}</div>`).join('')}</div>`).join('')
+    || '<div class="empty">No alerts yet — they need ~15 min of price history.</div>';
+
+  $('feed').innerHTML = S.feed.map(f => `<div class="card"><div class="dim">${f.type === 'x' ? '𝕏 ' : ''}${esc(f.src)} · ${ago(f.ts)}</div>
+    <a href="${esc(f.link)}" target="_blank" style="color:var(--text)" class="trunc">${esc(f.text)}</a></div>`).join('')
+    || '<div class="empty">Loading headlines…</div>';
+
+  $('arbs').innerHTML = S.arbs.map(a => `<div class="card"><h3>${esc(a.title)}</h3>
+    <div>Kalshi ${a.k_side.toUpperCase()} ${c(a.k_ask)} + Poly ${a.p_side.toUpperCase()} ${c(a.p_ask)}</div>
+    <div class="${a.edge > 0 ? 'g' : 'dim'}">edge ${(a.edge * 100).toFixed(1)}¢ per $1 after fees</div></div>`).join('')
+    || '<div class="empty">No confirmed pairs yet. Confirm matches below.</div>';
+  $('cands').innerHTML = S.candidates.map(x => `<div class="card">
+    <div>${venue('kalshi')}<a href="${esc(x.k.url)}" target="_blank">${esc(x.k.title)}</a> <b>${c(x.k.price)}</b></div>
+    <div style="margin-top:4px">${venue('polymarket')}<a href="${esc(x.p.url)}" target="_blank">${esc(x.p.title)}</a> <b>${c(x.p.price)}</b></div>
+    <div class="dim">match ${Math.round(x.score * 100)}% · open both links and check the resolution rules are identical</div>
+    <div class="btns"><button class="sm go" onclick="act('pair',{kalshi:'${esc(x.kalshi)}',poly:'${esc(x.poly)}',status:'confirmed'},this)">Same market</button>
+    <button class="sm" onclick="act('pair',{kalshi:'${esc(x.kalshi)}',poly:'${esc(x.poly)}',status:'rejected'},this)">Different</button></div></div>`).join('')
+    || '<div class="empty">Matching runs every 10 min once Polymarket loads.</div>';
+
+  const st = S.status, L = S.limits;
+  const kv = o => Object.entries(o).map(([k, v]) => `<div><span>${k}</span>${v}</div>`).join('');
+  $('sys').innerHTML = kv({
+    'Kalshi markets': st.kalshi_markets.toLocaleString(), 'Kalshi feed': st.kalshi_mode + (st.kalshi_mode === 'websocket' ? (st.ws_connected ? ' ✓' : ' …') : ''),
+    'Polymarket markets': st.poly_markets.toLocaleString(), 'Kalshi trading': st.kalshi_trading ? 'key loaded' : 'no key',
+    'Polymarket trading': st.poly_trading ? 'wallet loaded' : 'no wallet', 'X feed': st.x_enabled ? (st.x_error ? '<span class="r">' + esc(st.x_error) + '</span>' : `on · ${st.x_posts} posts`) : 'no key',
+    'Strategies': st.strategy ? 'running' : 'paused', 'Discord sent': st.discord_sent});
+  $('lims').innerHTML = kv({'Strategy stake': usd(L.stake), 'Max per trade': usd(L.max_trade), 'Max per market': usd(L.max_market),
+    'Max open total': usd(L.max_open), 'Max buys / day': usd(L.max_daily), 'Price band': c(L.band[0]) + '–' + c(L.band[1]),
+    'Paper auto-fill': L.paper_auto ? 'on' : 'off',
+    'Take-profit': L.exit_auto && L.take_profit ? '+' + Math.round(L.take_profit * 100) + '%' : 'off',
+    'Stop-loss': L.exit_auto && L.stop_loss ? '-' + Math.round(L.stop_loss * 100) + '%' : 'off'});
+  $('stratbtn').textContent = st.strategy ? 'Pause strategies' : 'Resume strategies';
+  $('activity').textContent = S.activity.join('\n') || 'Nothing yet.';
+  renderDesk(); renderGrades();
+}
+
+function renderDesk() {
+  const d = S.desk, t = d.today, g = d.gate;
+  const kv = o => Object.entries(o).map(([k, v]) => `<div><span>${k}</span>${v}</div>`).join('');
+  $('deskstat').innerHTML = kv({
+    'Judge': d.provider ? `${d.provider} · ${esc(d.model)}` : '<span class="a">no API key</span>',
+    'Status': !d.provider ? 'off' : d.enabled ? 'running' : 'paused',
+    'Waiting to judge': d.queue, 'Calls / failures': `${d.calls} / ${d.failures}`,
+    'Gate': `action ≥${g.action_p} · relevant ≥${g.relevant_p} · rules ≥${g.rules_p} · edge ≥${Math.round(g.min_edge * 100)}¢`,
+    'Last error': d.last_error ? `<span class="r">${esc(d.last_error)}</span>` : '—'});
+  $('deskbtn').textContent = d.enabled ? 'Pause judge' : 'Resume judge';
+  $('deskbtn').disabled = !d.provider;
+  $('desktoday').innerHTML = kv({'New markets found': t.found, 'Off-topic (skipped)': t.filtered,
+    'Judged': `${t.judged} / ${d.max_per_day} daily cap`, 'Buy': `<span class="g">${t.buy}</span>`,
+    'Watch': `<span class="a">${t.watch}</span>`, 'Pass': t.pass});
+  $('calib').innerHTML = '<tr class="dim"><td>confidence</td><td>buys</td><td>scored</td><td>green</td><td>win %</td></tr>' +
+    d.calibration.map(r => `<tr><td>${r.bucket}</td><td>${r.n}</td><td>${r.scored}</td><td>${r.green}</td>
+      <td>${r.scored ? Math.round(100 * r.green / r.scored) + '%' : '—'}</td></tr>`).join('');
+  $('passline').textContent = `Passes that would have been green 24h later: ${d.passes.would_be_green} / ${d.passes.scored}`;
+  const A = a => a ? ['relevant', 'late', 'rules_clear', 'action'].map(q => `${q}=${a[q].answer} ${a[q].p.toFixed(2)}`).join(' · ') + ` · fair YES ${c(a.fair_yes)}` : 'no answer';
+  $('verdicts').innerHTML = d.recent.map(v => `<div class="card" style="padding:10px">
+    <div class="row"><b class="${v.verdict === 'buy' ? 'g' : v.verdict === 'watch' ? 'a' : 'dim'}">${v.verdict.toUpperCase()}${v.side ? ' ' + v.side.toUpperCase() : ''}</b>
+    <span class="sp"></span><span class="dim">${ago(v.ts)}${v.result ? ' · settled ' + v.result.toUpperCase() : ''}</span></div>
+    <div class="trunc">${venue(v.venue)}${esc(v.title)}</div><div class="dim">${esc(v.reason)}</div>
+    <div class="dim" style="font-size:12px">${A(v.answers)}</div></div>`).join('')
+    || '<div class="empty">No verdicts yet. New markets get judged once they have a tight bid/ask.</div>';
+}
+function renderGrades() {
+  const Q = S.quant; if (!Q) return;
+  $('gradehdr').textContent = `keep ${Q.keep_score}+/25 after ${Q.min_trades} trades`;
+  const names = {sharpe: 'sharpe', drawdown: 'drawdown', trades: 'trades', edge: 'edge', stability: 'stability'};
+  $('grades').innerHTML = Q.grades.map(g => {
+    const col = g.score >= Q.keep_score ? 'var(--green)' : g.status === 'paused' ? 'var(--red)' : 'var(--amber)';
+    return `<div class="card"><div class="row"><b style="font-size:13.5px">${esc(g.name)}</b><span class="st ${g.status}">${g.status.toUpperCase()}</span><span class="sp"></span>
+      <b class="mono" style="color:${col}">${g.score}<span class="dim">/25</span></b></div>
+      <div class="row" style="margin-top:6px"><div class="bar" style="--k:${col}"><i style="width:${g.score * 4}%"></i></div></div>
+      <div class="dim mono" style="font-size:11px;margin-top:6px">${g.trades} trades · ${g.open} open · P&amp;L <span class="${sgn(g.pnl)}">${usd(g.pnl)}</span> · edge ${(g.edge * 100).toFixed(1)}%/trade</div>
+      <div class="dim mono" style="font-size:10.5px">${Object.entries(g.scores).map(([k, v]) => `${names[k]} <b style="color:var(--text)">${v}</b>`).join(' · ')}</div>
+      <details><summary>Why this could fail</summary><div class="dim" style="margin-top:4px">${esc(g.warnings.join(' '))} ${esc(g.why_fail)}</div></details>
+      <div class="btns"><button class="sm ${g.paused ? 'go' : 'no'}" onclick="act('quant',{kind:'${g.kind}',paused:${!g.paused}},this)">${g.paused ? 'Resume' : 'Pause'} ${esc(g.name.toLowerCase())}</button></div></div>`;
+  }).join('');
+  $('brief').textContent = Q.brief ? Q.brief.text : `No brief yet. The first one arrives at ${Q.brief_time}.`;
+  $('weekly').innerHTML = Q.weekly ? `<details><summary>Last weekly review</summary><pre class="brief" style="margin-top:6px">${esc(Q.weekly.text)}</pre></details>` : '';
+}
+function toggleDesk() { act('desk', {on: !S.desk.enabled}); }
+function exitLine(p) {
+  if (!S.limits.exit_auto) return 'auto-exits off';
+  const runner = S.limits.runner ? `, keeps ${Math.round(S.limits.runner * 100)}%` : '';
+  const tp = p.runner ? 'runner: holding to settlement'
+    : p.tp ? `take-profit +${Math.round(p.tp * 100)}% (sells at ≥${c(p.avg * (1 + p.tp))}${runner})` : 'no take-profit';
+  const sl = p.sl ? `stop-loss -${Math.round(p.sl * 100)}% (sells at ≤${c(p.avg * (1 - p.sl))})` : 'no stop-loss';
+  return tp + ' · ' + sl;
+}
+function editExit(ticker, outcome, tp, sl) {
+  const ask = (label, cur) => {
+    const v = prompt(`${label} % (blank = default, 0 = off)`, cur ? Math.round(cur * 100) : '0');
+    return v === null ? undefined : v.trim();
+  };
+  const t = ask('Take-profit: sell when up by', tp); if (t === undefined) return;
+  const s = ask('Stop-loss: sell when down by', sl); if (s === undefined) return;
+  act('exits', {ticker, outcome, tp: t, sl: s});
+}
+async function refresh() { try { S = await api('state'); render(); } catch (e) { if (e.message !== 'bad token') $('hdr').textContent = 'offline…'; } }
+function toggleKill() { const on = !S.summary.killed; if (on || confirm('Turn kill switch OFF and allow new buys?')) act('kill', {on}); }
+function toggleStrat() { act('strategy', {on: !S.status.strategy}); }
+
+let sT;
+function debSearch() { clearTimeout(sT); sT = setTimeout(doSearch, 350); }
+async function doSearch() {
+  const q = $('q').value.trim(); if (!q) { $('results').innerHTML = ''; return; }
+  const rows = await api('search?q=' + encodeURIComponent(q));
+  $('results').innerHTML = rows.map(m => `<div class="card"><h3>${venue(m.venue)}<a href="${esc(m.url)}" target="_blank">${esc(m.title)}</a></h3>
+    <div class="dim">last ${c(m.price)} · vol ${Math.round(m.volume).toLocaleString()}</div>
+    <div class="btns"><button class="sm go" onclick="buy('${esc(m.ticker)}','yes',this)">Buy YES ${c(m.yes_ask)}</button>
+    <button class="sm warn" onclick="buy('${esc(m.ticker)}','no',this)">Buy NO ${c(m.no_ask)}</button></div></div>`).join('') || '<div class="empty">No matches.</div>';
+}
+function buy(ticker, outcome, btn) {
+  const amt = parseFloat($('usd').value);
+  const live = S.summary.mode === 'live';
+  if (!confirm(`${live ? 'LIVE — real money!\n' : 'Paper trade\n'}Buy ~$${amt} of ${outcome.toUpperCase()}?`)) return;
+  act('trade', {ticker, outcome, usd: amt}, btn);
+}
+
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x === b));
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.id === 't-' + b.dataset.t));
+  window.scrollTo(0, 0);
+});
+
+function boot() {
+  if (!TOKEN) { $('login').style.display = 'block'; return; }
+  $('login').style.display = 'none'; $('app').style.display = 'block';
+  refresh(); clearInterval(window._ri); window._ri = setInterval(refresh, 4000);
+}
+boot();
+</script>
+</body>
+</html>

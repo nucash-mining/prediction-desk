@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#05070b">
+<title>Prediction Desk Live</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#05070b;--panel:#0b0f17;--panel2:#0f1520;--line:#1a2333;--line2:#243049;
+  --text:#d7e0ee;--dim:#6b7a93;--faint:#3a4760;
+  --cyan:#22d3ee;--green:#22e39a;--red:#ff4d6d;--amber:#ffb020;--violet:#a78bfa;--blue:#60a5fa;--pink:#f472b6;
+  --mono:'JetBrains Mono',ui-monospace,Menlo,monospace;--sans:Inter,system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--text);font:13px/1.45 var(--sans);overflow:hidden;
+  background-image:radial-gradient(1200px 600px at 10% -10%,#0e2a3a33,transparent),radial-gradient(900px 500px at 110% 0%,#2a0e3a33,transparent)}
+.mono{font-family:var(--mono)}
+.dim{color:var(--dim)}.g{color:var(--green)}.r{color:var(--red)}.a{color:var(--amber)}.c{color:var(--cyan)}.v{color:var(--violet)}
+a{color:inherit;text-decoration:none}a:hover{text-decoration:underline}
+#app{display:grid;grid-template-rows:auto auto 1fr;height:100vh;gap:10px;padding:10px 14px}
+/* header */
+header{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.brand{font:800 15px var(--sans);letter-spacing:.18em;display:flex;align-items:center;gap:10px}
+.brand i{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 12px var(--green);animation:pulse 2s infinite}
+.brand i.off{background:var(--red);box-shadow:0 0 12px var(--red)}
+@keyframes pulse{50%{opacity:.35}}
+.badge{font:700 11px var(--mono);padding:3px 9px;border-radius:4px;letter-spacing:.1em}
+.paper{background:#a78bfa1f;color:var(--violet);border:1px solid #a78bfa55}
+.live{background:#ff4d6d22;color:var(--red);border:1px solid #ff4d6d77}
+.kpis{display:flex;gap:8px;flex:1;justify-content:flex-end;flex-wrap:wrap}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 12px;min-width:112px}
+.kpi span{display:block;font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.12em}
+.kpi b{font:700 17px var(--mono)}
+.clock{font:600 12px var(--mono);color:var(--dim)}
+/* pipeline */
+.pipe{display:grid;grid-template-columns:repeat(8,1fr);gap:0;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 6px;position:relative}
+.node{position:relative;text-align:center;padding:4px 2px}
+.pipe::before{content:"";position:absolute;left:7%;right:7%;top:33px;height:2px;background:linear-gradient(90deg,var(--blue),var(--amber),var(--pink),var(--violet),var(--cyan),var(--green),var(--red));opacity:.28;z-index:0}
+.node .dot{width:40px;height:40px;margin:0 auto 6px;border-radius:12px;display:grid;place-items:center;background:var(--panel2);border:1px solid var(--line2);font-size:17px;transition:all .25s;position:relative;z-index:1}
+.node.hot .dot{border-color:var(--k);box-shadow:0 0 0 3px color-mix(in srgb,var(--k) 25%,transparent),0 0 22px var(--k);transform:scale(1.08)}
+.node .lbl{font:700 10px var(--mono);letter-spacing:.14em;color:var(--dim)}
+.node .num{font:700 15px var(--mono)}
+.node .sub{font-size:10px;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.spark{position:absolute;top:32px;height:4px;width:4px;border-radius:50%;background:var(--k);box-shadow:0 0 8px var(--k);animation:fly .7s linear forwards;z-index:2}
+@keyframes fly{from{transform:translateX(0);opacity:1}to{transform:translateX(var(--d));opacity:0}}
+/* 3D flow */
+.flow3d{position:relative;height:230px;background:radial-gradient(120% 140% at 50% 0%,#0d1a2b,#05070b 70%);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.flow3d .hud{position:absolute;left:12px;top:9px;z-index:2;font:700 10.5px var(--mono);letter-spacing:.16em;color:var(--dim);pointer-events:none}
+.flow3d .hud b{color:var(--cyan);font-size:15px;letter-spacing:0;margin-left:6px}
+.flow3d .hint{position:absolute;right:12px;top:9px;z-index:2;font:10px var(--mono);color:var(--faint);pointer-events:none}
+.flow3d #flow{position:absolute;left:10px;bottom:8px;width:190px!important;z-index:2;opacity:.85;pointer-events:none}
+.f3l{position:absolute;left:0;top:0;z-index:1;text-align:center;pointer-events:none;white-space:nowrap;will-change:transform}
+.f3l b{display:block;font:700 9.5px var(--mono);letter-spacing:.16em;color:var(--k);text-shadow:0 0 8px var(--k)}
+.f3l i{display:block;font:700 13px var(--mono);font-style:normal;color:var(--text)}
+.f3l u{display:block;text-decoration:none;font-size:9.5px;color:var(--dim);max-width:110px;overflow:hidden;text-overflow:ellipsis}
+.grade{display:grid;grid-template-columns:96px 40px 1fr 62px;gap:6px;align-items:center;font:11px var(--mono);margin:3px 0}
+.st{font:700 9px var(--mono);letter-spacing:.08em;padding:1px 4px;border-radius:3px;text-align:center}
+.st.keep{color:var(--green);border:1px solid #22e39a55}.st.proving{color:var(--amber);border:1px solid #ffb02055}.st.paused{color:var(--red);border:1px solid #ff4d6d55}
+/* main grid */
+main{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1.35fr) minmax(0,1fr);gap:10px;min-height:0}
+.col{display:flex;flex-direction:column;gap:10px;min-height:0;min-width:0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.panel h2{margin:0;padding:9px 12px;font:700 11px var(--mono);letter-spacing:.16em;color:var(--dim);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
+.panel h2 .sp{flex:1}
+.body{overflow:auto;padding:6px 0;min-height:0;flex:1}
+.body::-webkit-scrollbar{width:6px}.body::-webkit-scrollbar-thumb{background:var(--line2);border-radius:3px}
+/* feed */
+.chips{display:flex;gap:3px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}.chips::-webkit-scrollbar{display:none}
+.chip{font:600 9.5px var(--mono);padding:2px 5px;white-space:nowrap;border-radius:4px;border:1px solid var(--line2);color:var(--dim);cursor:pointer;user-select:none}
+.chip.on{color:var(--bg);background:var(--k);border-color:var(--k)}
+.ev{display:grid;grid-template-columns:52px 62px 1fr;gap:8px;padding:5px 12px;border-bottom:1px solid #ffffff06;animation:in .35s ease-out}
+.ev:hover{background:#ffffff05}
+@keyframes in{from{background:#22d3ee18;transform:translateX(-4px)}to{background:transparent}}
+.ev .t{font:11px var(--mono);color:var(--faint)}
+.tag{font:700 9.5px var(--mono);letter-spacing:.08em;padding:2px 0;border-radius:3px;text-align:center;height:fit-content;color:var(--k);background:color-mix(in srgb,var(--k) 14%,transparent);border:1px solid color-mix(in srgb,var(--k) 35%,transparent)}
+.ev .tt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ev>div{min-width:0}.body{overflow-x:hidden}
+.ev .dd{color:var(--dim);font-size:12px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+canvas{display:block;width:100%}
+/* judge room */
+.verdict-head{padding:10px 12px;display:flex;gap:12px;align-items:center;border-bottom:1px solid var(--line)}
+.stamp{font:800 20px var(--mono);letter-spacing:.12em;padding:6px 14px;border-radius:6px;border:2px solid currentColor;transform:rotate(-3deg)}
+.vt{font-weight:600;font-size:14px}
+.judges{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 12px}
+.jcard{background:var(--panel2);border:1px solid var(--line2);border-radius:8px;padding:9px}
+.jcard h3{margin:0 0 6px;font:700 11px var(--mono);letter-spacing:.1em;display:flex;justify-content:space-between}
+.q{display:grid;grid-template-columns:78px 62px 1fr;align-items:center;gap:6px;font:11.5px var(--mono);margin:4px 0}
+.bar{height:6px;background:#ffffff0d;border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--k);box-shadow:0 0 8px var(--k);transition:width .5s}
+.gate{padding:4px 12px 10px;display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.gk{background:var(--panel2);border:1px solid var(--line2);border-radius:6px;padding:6px;text-align:center;font:11px var(--mono)}
+.gk b{display:block;font-size:15px}
+.gk.ok{border-color:#22e39a66}.gk.ok b{color:var(--green)}.gk.no{border-color:#ff4d6d66}.gk.no b{color:var(--red)}
+pre.dossier{margin:0;padding:10px 12px;font:11.5px/1.5 var(--mono);color:#9fb0c8;white-space:pre-wrap;word-break:break-word}
+pre.dossier .k{color:var(--cyan)}pre.dossier .m{color:var(--red)}
+.vrow{display:grid;grid-template-columns:52px 54px 1fr 44px;gap:8px;padding:6px 12px;border-bottom:1px solid #ffffff06;cursor:pointer;align-items:center}
+.vrow:hover,.vrow.sel{background:#22d3ee0d}
+/* trades */
+.trade{display:grid;grid-template-columns:52px 1fr auto;gap:8px;padding:7px 12px;border-bottom:1px solid #ffffff06;animation:in .4s}
+.trade .big{font:700 12.5px var(--mono)}
+.pos{padding:8px 12px;border-bottom:1px solid #ffffff06}
+.pos .row{display:flex;justify-content:space-between;gap:8px}
+.pnlbar{height:4px;background:#ffffff0d;border-radius:2px;margin-top:5px;position:relative}
+.pnlbar i{position:absolute;top:0;bottom:0;border-radius:2px}
+.empty{color:var(--faint);text-align:center;padding:22px 10px;font:12px var(--mono)}
+.venue{font:700 9px var(--mono);padding:1px 5px;border-radius:3px;margin-right:5px;vertical-align:1px}
+.ks{background:#22e39a1c;color:var(--green)}.pm{background:#60a5fa22;color:var(--blue)}
+#login{display:none;place-items:center;height:100vh}
+#login .box{background:var(--panel);border:1px solid var(--line);padding:24px;border-radius:12px;width:min(420px,92vw)}
+input{width:100%;padding:10px;border-radius:8px;border:1px solid var(--line2);background:var(--bg);color:var(--text);font:13px var(--mono)}
+button{font:700 12px var(--mono);padding:9px 14px;border-radius:8px;border:1px solid var(--line2);background:var(--panel2);color:var(--text);cursor:pointer;margin-top:10px}
+@media (max-width:1100px){
+  .flow3d{height:min(70vw,380px)}.f3l u{display:none}
+  body{overflow:auto}#app{height:auto}
+  main{grid-template-columns:1fr}.panel{max-height:70vh}
+  .pipe{grid-template-columns:repeat(4,1fr);row-gap:10px}.pipe::before{display:none}
+  .kpis{justify-content:flex-start}
+}
+@media (max-width:600px){.judges{grid-template-columns:1fr}.gate{grid-template-columns:repeat(3,1fr)}
+  #app{padding:10px}.clock{display:none}
+  .kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%;flex:none;gap:6px}
+  .kpi{min-width:0;padding:5px 8px}.kpi b{font-size:14px}.kpi span{font-size:8.5px;letter-spacing:.08em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
+</style>
+</head>
+<body>
+<div id="login"><div class="box">
+  <div class="brand" style="margin-bottom:12px"><i class="off"></i>PREDICTION DESK</div>
+  <div class="dim" style="margin-bottom:10px">Paste the dashboard link or token (data/dashboard_url.txt on the computer).</div>
+  <input id="tok" placeholder="token"><button onclick="saveTok()">Connect</button>
+</div></div>
+
+<div id="app" style="display:none">
+<header>
+  <div class="brand"><i id="conn"></i>PREDICTION DESK</div>
+  <span id="mode" class="badge paper">PAPER</span>
+  <span class="clock" id="clock"></span>
+  <a class="dim mono" href="./" style="font-size:11px">← phone dashboard</a>
+  <div class="kpis">
+    <div class="kpi"><span>Equity</span><b id="k-eq">—</b></div>
+    <div class="kpi"><span>Open P&amp;L</span><b id="k-pnl">—</b></div>
+    <div class="kpi"><span>Markets watched</span><b id="k-mk">—</b></div>
+    <div class="kpi"><span>Price ticks/s</span><b id="k-tps">—</b></div>
+    <div class="kpi"><span>Judged today</span><b id="k-jd">—</b></div>
+    <div class="kpi"><span>Trades today</span><b id="k-tr">—</b></div>
+  </div>
+</header>
+
+<section class="flow3d" id="f3d">
+  <div class="hud">DATA FLOW<b id="epm">0</b> <span style="letter-spacing:.05em">events/min</span></div>
+  <div class="hint">drag to turn</div>
+  <canvas id="flow" height="40"></canvas>
+</section>
+<section class="pipe" id="pipe" style="display:none"></section>
+
+<main>
+  <div class="col">
+    <div class="panel" style="flex:1">
+      <h2 style="white-space:nowrap">DATA IN<span class="sp"></span><span class="chips" id="chips"></span></h2>
+      <div class="body" id="feed"></div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="panel" style="flex:0 0 auto">
+      <h2>JUDGE ROOM<span class="sp"></span><span id="jmeta" class="dim"></span></h2>
+      <div class="verdict-head" id="vhead"></div>
+      <div class="judges" id="judges"></div>
+      <div class="gate" id="gate"></div>
+    </div>
+    <div class="panel" style="flex:1">
+      <h2>DOSSIER · exactly what the judges read<span class="sp"></span><a id="dlink" class="c" target="_blank"></a></h2>
+      <div class="body"><pre class="dossier" id="dossier">Waiting for the next new political market…</pre></div>
+    </div>
+    <div class="panel" style="flex:0 0 190px">
+      <h2>RECENT VERDICTS<span class="sp"></span><span class="dim">click to inspect</span></h2>
+      <div class="body" id="vlist"></div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="panel" style="flex:0 0 auto">
+      <h2>EQUITY<span class="sp"></span><span id="eqd" class="dim"></span></h2>
+      <canvas id="eqc" height="80"></canvas>
+    </div>
+    <div class="panel" style="flex:0 0 auto">
+      <h2>DESK REPORT · most tasks end in a skip<span class="sp"></span><span id="rpd" class="dim"></span></h2>
+      <div id="report" style="padding:8px 12px"></div>
+    </div>
+    <div class="panel" style="flex:1">
+      <h2>TRADE TAPE<span class="sp"></span><span id="trn" class="dim"></span></h2>
+      <div class="body" id="tape"></div>
+    </div>
+    <div class="panel" style="flex:1">
+      <h2>OPEN POSITIONS<span class="sp"></span><span id="posn" class="dim"></span></h2>
+      <div class="body" id="positions"></div>
+    </div>
+  </div>
+</main>
+</div>
+
+<div id="err" style="display:none;position:fixed;bottom:10px;left:10px;right:10px;background:#3a0d17;color:#ffb3c1;border:1px solid #ff4d6d;border-radius:8px;padding:8px 12px;font:12px var(--mono);z-index:9"></div>
+<script>
+window.onerror = (msg, src, line, col) => { const e = document.getElementById('err'); e.style.display = 'block'; e.textContent = `display error: ${msg} (line ${line}:${col})`; };
+// ---------- where the bot is: same server, or the tunnel when this page is on GitHub Pages ----------
+const API = (() => {
+  const dflt = location.hostname.endsWith('github.io') ? 'https://trader.wattxchange.app' : '';
+  try { const q = new URLSearchParams(location.hash.slice(1)).get('api'); if (q) localStorage.setItem('pt_api', q); return q || localStorage.getItem('pt_api') || dflt; }
+  catch (e) { return dflt; }
+})();
+// ---------- auth ----------
+let TOKEN = '';
+try { TOKEN = localStorage.getItem('pt_token') || ''; } catch (e) {}
+const h = new URLSearchParams(location.hash.slice(1)).get('token');
+if (h) { TOKEN = h; try { localStorage.setItem('pt_token', h); } catch (e) {} history.replaceState(null, '', location.pathname); }
+function saveTok() { TOKEN = document.getElementById('tok').value.trim().replace(/.*token=/, ''); try { localStorage.setItem('pt_token', TOKEN); } catch (e) {} boot(); }
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const c = p => p == null ? '—' : Math.round(p * 100) + '¢';
+const usd = v => v == null ? '—' : (v < 0 ? '-$' : '$') + Math.abs(v).toFixed(2);
+const hhmm = ts => new Date(ts * 1000).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false});
+const ven = v => v === 'polymarket' ? '<span class="venue pm">POLY</span>' : v === 'kalshi' ? '<span class="venue ks">KALSHI</span>' : '';
+
+// ---------- event kinds ----------
+const K = {
+  data:    {lbl: 'DATA',    col: 'var(--blue)'},
+  news:    {lbl: 'NEWS',    col: 'var(--cyan)'},
+  x:       {lbl: '𝕏 POST',  col: 'var(--text)'},
+  alert:   {lbl: 'SIGNAL',  col: 'var(--amber)'},
+  finder:  {lbl: 'NEW MKT', col: 'var(--pink)'},
+  skip:    {lbl: 'SKIP',    col: 'var(--dim)'},
+  copy:    {lbl: 'COPY',    col: '#facc15'},
+  dossier: {lbl: 'DOSSIER', col: 'var(--violet)'},
+  verdict: {lbl: 'VERDICT', col: 'var(--violet)'},
+  judge_down: {lbl: 'JUDGE ✕', col: 'var(--red)'},
+  trade:   {lbl: 'TRADE',   col: 'var(--green)'},
+  log:     {lbl: 'LOG',     col: 'var(--faint)'},
+};
+const FEED_KINDS = ['data', 'news', 'x', 'alert', 'copy', 'finder', 'skip', 'log'];
+let filters = new Set(['data', 'news', 'x', 'alert', 'copy', 'finder', 'skip']);
+$('chips').innerHTML = FEED_KINDS.map(k => `<span class="chip ${filters.has(k) ? 'on' : ''}" style="--k:${K[k].col}" data-k="${k}">${K[k].lbl}</span>`).join('');
+$('chips').onclick = e => { const k = e.target.dataset.k; if (!k) return; filters.has(k) ? filters.delete(k) : filters.add(k); e.target.classList.toggle('on'); renderFeed(); };
+
+// ---------- pipeline ----------
+const STAGES = [
+  {id: 'feeds',  icon: '📡', lbl: 'FEEDS',   hex: '#60a5fa', k: 'var(--blue)',   kinds: ['data', 'news', 'x']},
+  {id: 'signal', icon: '⚡', lbl: 'SIGNALS', hex: '#ffb020', k: 'var(--amber)',  kinds: ['alert', 'copy']},
+  {id: 'finder', icon: '🛰', lbl: 'FINDER',  hex: '#f472b6', k: 'var(--pink)',   kinds: ['finder']},
+  {id: 'verify', icon: '🧱', lbl: 'VERIFY',  hex: '#7dd3fc', k: 'var(--blue)',   kinds: ['skip']},
+  {id: 'dossier',icon: '📄', lbl: 'DOSSIER', hex: '#a78bfa', k: 'var(--violet)', kinds: ['dossier']},
+  {id: 'judges', icon: '⚖️', lbl: 'JUDGES',  hex: '#22d3ee', k: 'var(--cyan)',   kinds: ['verdict', 'judge_down']},
+  {id: 'trades', icon: '💸', lbl: 'TRADES',  hex: '#22e39a', k: 'var(--green)',  kinds: ['trade']},
+  {id: 'exits',  icon: '🎯', lbl: 'EXITS',   hex: '#ff4d6d', k: 'var(--red)',    kinds: []},
+];
+$('pipe').innerHTML = STAGES.map(s => `<div class="node" id="n-${s.id}" style="--k:${s.k}">
+  <div class="dot">${s.icon}</div><div class="lbl">${s.lbl}</div><div class="num" id="nn-${s.id}">0</div><div class="sub" id="ns-${s.id}">&nbsp;</div></div>`).join('');
+const stageOf = e => e.kind === 'trade' && e.action === 'sell' || (e.kind === 'alert' && e.title.startsWith('EXIT')) ? 'exits'
+  : (STAGES.find(s => s.kinds.includes(e.kind)) || {}).id;
+const stageCount = {};
+const lastFly = {};
+function pulse(stage, sub, backlog) {
+  const n = $('n-' + stage); if (!n) return;
+  stageCount[stage] = (stageCount[stage] || 0) + 1;
+  if (window.F3D) {  // 3D view: at most ~10 particles a second per stage so bursts stay readable
+    const now = performance.now(), fly = !backlog && document.visibilityState === 'visible' && now - (lastFly[stage] || 0) > 100;
+    if (fly) lastFly[stage] = now;
+    window.F3D.hit(STAGES.findIndex(s => s.id === stage), stageCount[stage], sub, fly);
+    return;
+  }
+  $('nn-' + stage).textContent = stageCount[stage].toLocaleString();
+  if (sub) $('ns-' + stage).textContent = sub;
+  n.classList.add('hot'); clearTimeout(n._t); n._t = setTimeout(() => n.classList.remove('hot'), 600);
+  if (n.nextElementSibling && document.visibilityState === 'visible') {
+    const sp = document.createElement('div'); sp.className = 'spark';
+    sp.style.left = (n.offsetLeft + n.offsetWidth / 2 + 22) + 'px';
+    sp.style.setProperty('--d', (n.offsetWidth - 44) + 'px'); sp.style.setProperty('--k', getComputedStyle(n).getPropertyValue('--k'));
+    $('pipe').appendChild(sp); setTimeout(() => sp.remove(), 750);
+  }
+}
+
+// ---------- state ----------
+const events = [];          // all events, newest last
+const verdicts = [];        // verdict events (newest first)
+const dossiers = {};        // ticker -> latest dossier text
+let selected = null, S = null, lastId = 0;
+const perMin = new Array(60).fill(0); let curMin = Math.floor(Date.now() / 60000);
+const eqHist = [];
+
+function onEvent(e, backlog) {
+  lastId = Math.max(lastId, e.id);
+  events.push(e); if (events.length > 800) events.shift();
+  const st = stageOf(e);
+  if (st) pulse(st, e.kind === 'verdict' ? (e.verdict || '').toUpperCase() + ' · ' + e.title : e.title, backlog);
+  const m = Math.floor(e.ts * 1000 / 60000);
+  if (!backlog || Date.now() / 1000 - e.ts < 3600) bump(m);
+  if (e.kind === 'dossier') { dossiers[e.ticker] = e; if (!selected || selected.pending) showDossierPending(e); }
+  if (e.kind === 'verdict') { verdicts.unshift(e); if (verdicts.length > 60) verdicts.pop(); if (!selected || selected.pending || selected.id === verdicts[1]?.id || !backlog) select(e); renderVerdicts(); }
+  if (e.kind === 'trade') renderTape();
+  if (FEED_KINDS.includes(e.kind)) renderFeedSoon();
+}
+function bump(m) {
+  if (m > curMin) { const shift = Math.min(60, m - curMin); for (let i = 0; i < shift; i++) { perMin.shift(); perMin.push(0); } curMin = m; }
+  const idx = 59 - (curMin - m); if (idx >= 0) perMin[idx]++;
+}
+
+// ---------- feed ----------
+let feedT;
+let feedLast = 0;
+function renderFeedSoon() {  // draw now, at most ~6x/second; a trailing draw catches the rest
+  clearTimeout(feedT);
+  if (performance.now() - feedLast > 160) { feedLast = performance.now(); renderFeed(); }
+  else feedT = setTimeout(() => { feedLast = performance.now(); renderFeed(); }, 170);
+}
+function renderFeed() {
+  const rows = events.filter(e => filters.has(e.kind)).slice(-150).reverse();
+  $('feed').innerHTML = rows.map(e => `<div class="ev">
+    <div class="t">${hhmm(e.ts)}</div><div class="tag" style="--k:${K[e.kind].col}">${K[e.kind].lbl}</div>
+    <div><div class="tt">${e.url ? `<a href="${esc(e.url)}" target="_blank">${esc(e.title)}</a>` : esc(e.title)}</div>
+    ${e.detail ? `<div class="dd">${esc(e.detail)}</div>` : ''}</div></div>`).join('') || '<div class="empty">waiting for data…</div>';
+}
+
+// ---------- judge room ----------
+const Q = [['relevant', 'yes'], ['late', 'no'], ['rules_clear', 'yes'], ['action', null]];
+function showDossierPending(d) {
+  selected = {pending: true, id: 'p' + d.id};
+  $('vhead').innerHTML = `<div class="stamp c" style="animation:pulse 1s infinite">JUDGING</div><div><div class="vt">${ven(d.venue)}${esc(d.title)}</div><div class="dim">asking ${esc(d.judges || 'judges')}…</div></div>`;
+  $('judges').innerHTML = ''; $('gate').innerHTML = '';
+  renderDossier(d);
+}
+function renderDossier(d) {
+  if (!d) { $('dossier').textContent = 'Dossier not in this session (it was judged before the page opened).'; $('dlink').textContent = ''; return; }
+  $('dossier').innerHTML = esc(d.detail).replace(/^([a-zA-Z0-9 /()]+?):/gm, '<span class="k">$1:</span>').replace(/\bmissing\b/g, '<span class="m">missing</span>');
+  $('dlink').textContent = d.url ? 'open market ↗' : ''; $('dlink').href = d.url || '#';
+}
+function select(v) {
+  selected = v;
+  const col = v.verdict === 'buy' ? 'g' : v.verdict === 'watch' ? 'a' : 'dim';
+  $('vhead').innerHTML = `<div class="stamp ${col}">${(v.verdict || '').toUpperCase()}${v.side ? ' ' + v.side.toUpperCase() : ''}</div>
+    <div style="min-width:0"><div class="vt">${ven(v.venue)}${esc(v.title)}</div><div class="dim" style="font-size:12px">${esc(v.detail || v.reason || '')}</div>
+    <div class="dim mono" style="font-size:11px">YES ask ${c(v.yes_ask)} · NO ask ${c(v.no_ask)}${v.secs ? ' · judged in ' + v.secs + 's' : ''} · ${hhmm(v.ts)}</div></div>`;
+  const panel = v.answers || v.panel || {};
+  $('judges').innerHTML = Object.entries(panel).map(([name, a]) => {
+    if (!a) return `<div class="jcard"><h3><span>${esc(name.toUpperCase())}</span><span class="r">no answer</span></h3></div>`;
+    return `<div class="jcard"><h3><span class="c">${esc(name.toUpperCase())}</span><span>fair YES <b class="v">${c(a.fair_yes)}</b></span></h3>
+      ${Q.map(([q, good]) => { const ans = a[q]; const ok = good ? ans.answer === good : ans.answer.startsWith('buy');
+        return `<div class="q"><span class="dim">${q}</span><b class="${ok ? 'g' : ans.answer === 'watch' ? 'a' : 'r'}">${esc(ans.answer)}</b>
+        <div class="bar" style="--k:${ok ? 'var(--green)' : 'var(--red)'}"><i style="width:${Math.round(ans.p * 100)}%"></i></div></div>`; }).join('')}
+    </div>`; }).join('') || '<div class="empty" style="grid-column:1/-1">no judge answers recorded</div>';
+  // gate checklist (from the first judge, against the live thresholds)
+  const g = S?.desk?.gate, first = Object.values(panel)[0];
+  if (g && first) {
+    const side = first.action.answer === 'buy_no' ? 'no' : 'yes';
+    const fair = side === 'yes' ? first.fair_yes : 1 - first.fair_yes, ask = side === 'yes' ? v.yes_ask : v.no_ask;
+    const edge = ask ? fair - ask : null;
+    const checks = [
+      ['action', first.action.answer.startsWith('buy') && first.action.p >= g.action_p, `${first.action.p.toFixed(2)} ≥ ${g.action_p}`],
+      ['relevant', first.relevant.answer === 'yes' && first.relevant.p >= g.relevant_p, `${first.relevant.answer} ${first.relevant.p.toFixed(2)}`],
+      ['not late', first.late.answer === 'no', first.late.answer],
+      ['rules', first.rules_clear.answer === 'yes' && first.rules_clear.p >= g.rules_p, `${first.rules_clear.answer} ${first.rules_clear.p.toFixed(2)}`],
+      ['edge', edge != null && edge >= g.min_edge, edge == null ? '—' : `${edge >= 0 ? '+' : ''}${Math.round(edge * 100)}¢ ≥ ${Math.round(g.min_edge * 100)}¢`],
+    ];
+    $('gate').innerHTML = checks.map(([n, ok, t]) => `<div class="gk ${ok ? 'ok' : 'no'}"><b>${ok ? '✓' : '✕'}</b>${n}<div class="dim" style="font-size:10px">${esc(t)}</div></div>`).join('');
+  } else $('gate').innerHTML = '';
+  renderDossier(dossiers[v.ticker]);
+  document.querySelectorAll('.vrow').forEach(r => r.classList.toggle('sel', r.dataset.id == v.id));
+}
+function renderVerdicts() {
+  $('vlist').innerHTML = verdicts.map(v => `<div class="vrow" data-id="${v.id}">
+    <span class="dim mono" style="font-size:11px">${hhmm(v.ts).slice(0, 5)}</span>
+    <b class="mono ${v.verdict === 'buy' ? 'g' : v.verdict === 'watch' ? 'a' : 'dim'}" style="font-size:11px">${(v.verdict || '').toUpperCase()}</b>
+    <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${ven(v.venue)}${esc(v.title)}</span>
+    <span class="dim mono" style="font-size:11px;text-align:right">${v.edge ? (v.edge > 0 ? '+' : '') + Math.round(v.edge * 100) + '¢' : ''}</span></div>`).join('')
+    || '<div class="empty">no verdicts yet</div>';
+}
+$('vlist').onclick = e => { const r = e.target.closest('.vrow'); if (!r) return; const v = verdicts.find(x => x.id == r.dataset.id); if (v) select(v); };
+
+// ---------- trades ----------
+let seededTrades = [];
+function renderTape() {
+  const t = [...events.filter(e => e.kind === 'trade')].reverse().concat(seededTrades).slice(0, 80);
+  $('trn').textContent = t.length ? t.length + ' recent' : '';
+  $('tape').innerHTML = t.map(e => {
+    const col = e.action === 'buy' ? 'g' : e.action === 'settle' ? (e.price > 0 ? 'c' : 'r') : 'a';
+    return `<div class="trade"><span class="dim mono" style="font-size:11px">${hhmm(e.ts).slice(0, 5)}</span>
+      <div style="min-width:0"><div class="big ${col}">${esc(e.title)}</div><div class="dim" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${ven(e.venue)}${esc(e.detail)}</div></div>
+      <b class="mono">${usd(e.usd)}</b></div>`; }).join('') || '<div class="empty">no trades yet</div>';
+}
+function renderPositions() {
+  const P = S.positions;
+  $('posn').textContent = P.length ? P.length + ' open' : '';
+  const max = Math.max(1, ...P.map(p => Math.abs(p.pnl || 0)));
+  $('positions').innerHTML = P.map(p => {
+    const w = Math.round(50 * Math.abs(p.pnl || 0) / max), pos = (p.pnl || 0) >= 0;
+    return `<div class="pos"><div class="row"><span style="min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${ven(p.venue)}<a href="${esc(p.url)}" target="_blank">${esc(p.title)}</a></span>
+      <b class="mono ${pos ? 'g' : 'r'}">${usd(p.pnl)}</b></div>
+      <div class="dim mono" style="font-size:11px">${p.qty} ${p.outcome.toUpperCase()} · avg ${c(p.avg)} → bid ${c(p.bid)}${p.runner ? ' · <span class="c">runner</span>' : ''}${p.pnl_pct != null ? ' · ' + Math.round(p.pnl_pct * 100) + '%' : ''}</div>
+      <div class="pnlbar"><i style="left:${pos ? 50 : 50 - w}%;width:${w}%;background:${pos ? 'var(--green)' : 'var(--red)'}"></i><i style="left:50%;width:1px;background:var(--faint)"></i></div></div>`; }).join('')
+    || '<div class="empty">no open positions</div>';
+}
+
+function renderReport() {
+  const t = S.desk.today, cl = S.desk.closes, sk = S.desk.skip_reasons || [];
+  const funnel = [['found', t.found, 'var(--pink)'], ['off-topic', t.filtered, 'var(--faint)'], ['code skip', t.hard_skipped, 'var(--blue)'],
+                  ['judged', t.judged, 'var(--violet)'], ['buy', t.buy, 'var(--green)']];
+  const top = Math.max(1, ...funnel.map(f => f[1]));
+  const wr = cl.closes ? Math.round(100 * cl.wins / cl.closes) + '%' : '—';
+  $('report').innerHTML = `
+    ${funnel.map(([n, v, col]) => `<div class="q" style="grid-template-columns:78px 46px 1fr"><span class="dim">${n}</span><b>${v}</b>
+      <div class="bar" style="--k:${col}"><i style="width:${Math.max(2, Math.round(100 * v / top))}%"></i></div></div>`).join('')}
+    <div class="dim mono" style="font-size:11px;margin-top:6px">closes <b style="color:var(--text)">${cl.closes}</b> ·
+      <span class="g">${cl.wins}W</span> / <span class="r">${cl.losses}L</span> · win rate ${wr} ·
+      realized <b class="${cl.realized >= 0 ? 'g' : 'r'}">${usd(cl.realized)}</b>${cl.top5_share != null ? ` · top 5 = ${Math.round(cl.top5_share * 100)}% of profit` : ''}</div>
+    ${S.copy ? `<div class="dim mono" style="font-size:11px;margin-top:4px">copying ${S.copy.enabled ? '' : '(PAUSED) '}<b style="color:#facc15">${S.copy.leaders.length}</b> top traders:
+      ${S.copy.leaders.slice(0, 6).map(l => esc(l.name)).join(', ')}${S.copy.leaders.length > 6 ? '…' : ''} · ${S.copy.stats.leader_trades} trades seen · ${S.copy.stats.copied} copied · ${S.copy.stats.exits} exits</div>` : ''}
+    ${S.quant ? `<div class="mono" style="font-size:10px;letter-spacing:.14em;color:var(--dim);margin:8px 0 2px">STRATEGY GRADES · keep ${S.quant.keep_score}+/25 after ${S.quant.min_trades} trades</div>
+      ${S.quant.grades.map(g => `<div class="grade" title="${esc(g.warnings.concat([g.why_fail]).join(' '))}"><span>${esc(g.name)}</span><b>${g.score}</b>
+        <div class="bar" style="--k:${g.score >= S.quant.keep_score ? 'var(--green)' : g.status === 'paused' ? 'var(--red)' : 'var(--amber)'}"><i style="width:${g.score * 4}%"></i></div>
+        <span class="st ${g.status}">${g.status.toUpperCase()}</span></div>`).join('')}` : ''}
+    <div class="dim mono" style="font-size:11px;margin-top:4px">top skips: ${sk.length ? sk.map(([r, n]) => `${esc(r)} <b style="color:var(--text)">${n}</b>`).join(' · ') : '—'}</div>`;
+  $('rpd').textContent = 'today';
+}
+
+// ---------- charts ----------
+function drawFlow() {
+  bump(Math.floor(Date.now() / 60000));
+  $('epm').textContent = perMin[59] + perMin[58] ? Math.round((perMin[58] + perMin[59]) / 2) : 0;
+  sparkDraw($('flow'), perMin, '#22d3ee');
+}
+function sparkDraw(cv, data, color) {
+  const dpr = devicePixelRatio || 1, w = cv.clientWidth || 300, hgt = parseInt(cv.getAttribute('height'));
+  cv.width = w * dpr; cv.height = hgt * dpr; cv.style.height = hgt + 'px';
+  const x = cv.getContext('2d'); x.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if (data.length < 2) return;
+  const lo = Math.min(...data), hi = Math.max(...data), rng = hi - lo || 1;
+  const px = i => 6 + i * (w - 12) / (data.length - 1), py = v => hgt - 8 - (v - lo) / rng * (hgt - 16);
+  x.beginPath(); data.forEach((v, i) => i ? x.lineTo(px(i), py(v)) : x.moveTo(px(i), py(v)));
+  x.strokeStyle = color; x.lineWidth = 1.8; x.shadowColor = color; x.shadowBlur = 10; x.stroke(); x.shadowBlur = 0;
+  x.lineTo(px(data.length - 1), hgt); x.lineTo(px(0), hgt); x.closePath();
+  const gr = x.createLinearGradient(0, 0, 0, hgt); gr.addColorStop(0, color + '44'); gr.addColorStop(1, color + '00'); x.fillStyle = gr; x.fill();
+}
+
+// ---------- polling state (kpis, positions, equity) ----------
+let lastWs = null, lastWsT = 0;
+async function poll() {
+  try {
+    const r = await fetch(API + '/api/state', {headers: {'X-Token': TOKEN}});
+    if (r.status === 401) return showLogin();
+    S = await r.json();
+  } catch (e) { $('conn').classList.add('off'); return; }
+  const s = S.summary, live = s.mode === 'live';
+  $('mode').textContent = live ? 'LIVE' : 'PAPER'; $('mode').className = 'badge ' + (live ? 'live' : 'paper');
+  const eq = live ? (s.balances.kalshi || 0) + (s.balances.polymarket || 0) + s.open_value : s.equity;
+  $('k-eq').textContent = usd(eq);
+  $('k-pnl').textContent = usd(s.unrealized); $('k-pnl').className = s.unrealized >= 0 ? 'g' : 'r';
+  $('k-mk').textContent = (S.status.kalshi_markets + S.status.poly_markets).toLocaleString();
+  const now = Date.now() / 1000;
+  if (lastWs != null && now > lastWsT) $('k-tps').textContent = Math.max(0, Math.round((S.ws_msgs - lastWs) / (now - lastWsT))).toLocaleString();
+  lastWs = S.ws_msgs; lastWsT = now;
+  $('k-jd').textContent = S.desk.today.judged;
+  const day0 = new Date(); day0.setHours(0, 0, 0, 0);
+  $('k-tr').textContent = S.history.filter(t => t.ts * 1000 >= day0).length;
+  $('jmeta').textContent = S.desk.provider ? `${S.desk.provider} · ${S.desk.model}` + (S.desk.enabled ? '' : ' · PAUSED') : 'no judges configured';
+  eqHist.push(eq); if (eqHist.length > 720) eqHist.shift();
+  $('eqd').innerHTML = live ? '' : `start ${usd(s.start)} · total <span class="${s.total_pnl >= 0 ? 'g' : 'r'}">${usd(s.total_pnl)}</span>`;
+  sparkDraw($('eqc'), eqHist, s.total_pnl >= 0 || live ? '#22e39a' : '#ff4d6d');
+  renderPositions();
+  renderReport();
+  if (!seededTrades.length && S.history.length && !events.some(e => e.kind === 'trade')) {
+    seededTrades = S.history.map(t => ({ts: t.ts, kind: 'trade', action: t.action, venue: t.venue, price: t.price, usd: t.usd,
+      title: `${t.mode.toUpperCase()} ${t.action.toUpperCase()} ${t.count} ${t.outcome.toUpperCase()} @ ${Math.round(t.price * 100)}¢`, detail: t.title}));
+    renderTape();
+  }
+  // seed verdicts from history if this session has none yet
+  if (!verdicts.length && S.desk.recent.length) {
+    S.desk.recent.slice().reverse().forEach(r => verdicts.unshift({id: 'h' + r.id, ts: r.ts, kind: 'verdict', title: r.title, detail: r.reason,
+      verdict: r.verdict, side: r.side, edge: r.edge, venue: r.venue, ticker: r.ticker, answers: r.panel || (r.answers ? {judge: r.answers} : {}),
+      yes_ask: r.yes_ask, no_ask: r.no_ask}));
+    renderVerdicts(); if (!selected && verdicts[0]) select(verdicts[0]);
+  }
+}
+
+// ---------- stream ----------
+let es;
+function connect() {
+  if (es) es.close();
+  es = new EventSource(`${API}/api/stream?token=${encodeURIComponent(TOKEN)}&after=${lastId}`);
+  let backlog = true; setTimeout(() => backlog = false, 1500);
+  es.onopen = () => $('conn').classList.remove('off');
+  es.onmessage = m => { try { onEvent(JSON.parse(m.data), backlog); } catch (e) { console.error(e); window.onerror(e.message + ' @ ' + (e.stack || '').split('\n')[1], '', 0, 0); } };
+  es.onerror = () => { $('conn').classList.add('off'); es.close(); setTimeout(connect, 3000); };
+}
+function showLogin() { $('app').style.display = 'none'; $('login').style.display = 'grid'; }
+function boot() {
+  if (!TOKEN) return showLogin();
+  $('login').style.display = 'none'; $('app').style.display = 'grid';
+  connect(); poll(); setInterval(poll, 5000); setInterval(drawFlow, 2000); drawFlow();
+  const tick = () => $('clock').textContent = new Date().toLocaleString([], {weekday: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit'});
+  tick(); setInterval(tick, 1000);
+  renderFeed(); renderTape(); renderVerdicts();
+}
+boot();
+</script>
+<script type="module">
+import {createFlow3D} from './static/flow3d.js';
+const f = createFlow3D(document.getElementById('f3d'), STAGES);
+if (f) window.F3D = f;
+else { document.getElementById('f3d').style.height = 'auto'; document.getElementById('pipe').style.display = ''; }  // no WebGL: flat pipeline
+</script>
+</body>
+</html>
