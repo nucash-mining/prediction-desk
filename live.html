@@ -420,6 +420,10 @@ function renderReport() {
       ${S.quant.grades.map(g => `<div class="grade" title="${esc(g.warnings.concat([g.why_fail]).join(' '))}"><span>${esc(g.name)}</span><b>${g.score}</b>
         <div class="bar" style="--k:${g.score >= S.quant.keep_score ? 'var(--green)' : g.status === 'paused' ? 'var(--red)' : 'var(--amber)'}"><i style="width:${g.score * 4}%"></i></div>
         <span class="st ${g.status}">${g.status.toUpperCase()}</span></div>`).join('')}` : ''}
+    ${S.quant && S.quant.payroll ? (() => { const mo = S.quant.payroll.month; return `<div class="mono" style="font-size:10px;letter-spacing:.14em;color:var(--dim);margin:8px 0 2px">PAYROLL · PAY FOR YOURSELF OR YOU'RE FIRED</div>
+      <div class="grade"><span>${esc(mo.month)} net</span><b style="color:${mo.net >= mo.bill ? 'var(--green)' : mo.net > 0 ? 'var(--amber)' : 'var(--red)'}">${mo.net < 0 ? '-' : ''}$${Math.abs(mo.net).toFixed(2)}</b>
+        <div class="bar" style="--k:var(--green)"><i style="width:${Math.min(100, Math.max(0, (mo.covered || 0) * 100))}%"></i></div><span class="st">${Math.round((mo.covered || 0) * 100)}% OF $${mo.bill}</span></div>
+      ${S.quant.payroll.staff.filter(r => r.status !== 'not started').map(r => `<div class="grade"><span>${esc(r.name)}</span><b>${r.net < 0 ? '-' : ''}$${Math.abs(r.net).toFixed(2)}</b><span></span><span class="st ${r.status === 'earning' ? 'keep' : r.status === 'probation' ? 'proving' : 'paused'}">${r.status.toUpperCase()}</span></div>`).join('')}`; })() : ''}
     <div class="dim mono" style="font-size:11px;margin-top:4px">top skips: ${sk.length ? sk.map(([r, n]) => `${esc(r)} <b style="color:var(--text)">${n}</b>`).join(' · ') : '—'}</div>`;
   $('rpd').textContent = 'today';
 }

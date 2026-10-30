@@ -91,6 +91,9 @@ pre.brief{white-space:pre-wrap;font:11.5px/1.5 var(--mono);color:#9fb0c8;margin:
     <h2>Recent fills</h2><div id="history"></div>
   </section>
   <section class="tab" id="t-desk">
+    <h2>Payroll<span class="sp"></span><span style="letter-spacing:.04em;text-transform:none">pay for yourself or you're fired</span></h2>
+    <div class="card" id="paymonth"></div><div id="paystaff"></div>
+    <h2>Forecasts<span class="sp"></span><span id="fchdr" style="letter-spacing:.04em;text-transform:none"></span></h2><div id="fcboard"></div>
     <h2>Strategy grades<span class="sp"></span><span id="gradehdr" style="letter-spacing:.04em;text-transform:none"></span></h2><div id="grades"></div>
     <h2>Morning brief<span class="sp"></span><button class="sm" style="letter-spacing:0;text-transform:none" onclick="act('quant',{brief:true},this)">Make one now</button></h2>
     <div class="card"><pre class="brief" id="brief"></pre><div id="weekly"></div></div>
@@ -278,6 +281,7 @@ function renderDesk() {
 }
 function renderGrades() {
   const Q = S.quant; if (!Q) return;
+  try { renderPayroll(); } catch (e) { console.error(e); }
   $('gradehdr').textContent = `keep ${Q.keep_score}+/25 after ${Q.min_trades} trades`;
   const names = {sharpe: 'sharpe', drawdown: 'drawdown', trades: 'trades', edge: 'edge', stability: 'stability'};
   $('grades').innerHTML = Q.grades.map(g => {
@@ -292,6 +296,35 @@ function renderGrades() {
   }).join('');
   $('brief').textContent = Q.brief ? Q.brief.text : `No brief yet. The first one arrives at ${Q.brief_time}.`;
   $('weekly').innerHTML = Q.weekly ? `<details><summary>Last weekly review</summary><pre class="brief" style="margin-top:6px">${esc(Q.weekly.text)}</pre></details>` : '';
+}
+function renderPayroll() {
+  const P = S.quant && S.quant.payroll; if (!P) return;
+  const mo = P.month, pct = mo.covered == null ? 0 : Math.min(1, mo.covered);
+  const col = mo.net >= mo.bill ? 'var(--green)' : mo.net > 0 ? 'var(--amber)' : 'var(--red)';
+  $('paymonth').innerHTML = `<div class="row"><b style="font-size:13.5px">${esc(mo.month)}</b><span class="sp"></span>
+      <b class="mono" style="color:${col}">${usd(mo.net)}</b><span class="dim" style="margin-left:6px">of ${usd(mo.bill)} AI bill</span></div>
+    <div class="row" style="margin-top:6px"><div class="bar" style="--k:${col}"><i style="width:${pct * 100}%"></i></div></div>
+    <div class="dim mono" style="font-size:11px;margin-top:6px">earned ${usd(mo.earned)} − costs ${usd(mo.costs)} · ${Math.round(pct * 100)}% of the bill covered
+      ${mo.upgrade ? ` · ${Math.round(Math.min(1, mo.upgrade_covered || 0) * 100)}% of the ${usd(mo.upgrade)} upgrade` : ''}</div>
+    <div class="dim" style="font-size:11px;margin-top:4px">${S.summary && S.summary.mode === 'paper' ? 'Paper money: this shows whether the bot would have paid its way.' : ''}
+      New or rehired strategies get ${P.probation_trades} trades or ${P.probation_days} days of probation, then anything that costs more than it makes is fired.</div>`;
+  const stc = {earning: 'var(--green)', probation: 'var(--amber)', failing: 'var(--red)', fired: 'var(--red)'};
+  $('paystaff').innerHTML = P.staff.filter(r => r.status !== 'not started').map(r => `<div class="card"><div class="row">
+      <b style="font-size:13px">${esc(r.name)}</b><span class="mono" style="font-size:10px;margin-left:8px;color:${stc[r.status] || 'var(--dim)'}">${r.status.toUpperCase()}</span>
+      <span class="sp"></span><b class="mono ${sgn(r.net)}">${usd(r.net)}</b></div>
+      <div class="dim mono" style="font-size:11px;margin-top:4px">earned ${usd(r.earned)} − cost ${usd(r.cost)} · ${r.trades} trades · ${r.days} days</div>
+      <div class="dim" style="font-size:11.5px">${esc(r.note)}</div>
+      ${r.status === 'fired' ? `<div class="btns"><button class="sm go" onclick="act('quant',{kind:'${r.kind}',paused:false},this)">Rehire (new probation)</button></div>` : ''}</div>`).join('')
+    + (P.sources.length ? `<div class="card"><b style="font-size:12.5px">News sources</b>${P.sources.map(x => `<div class="row mono" style="font-size:11px;margin-top:3px">
+      <span>${esc(x.source)}${x.muted ? ' <span style="color:var(--red)">MUTED</span>' : ''}</span><span class="sp"></span><span>${x.trades} trades · <span class="${sgn(x.net)}">${usd(x.net)}</span></span></div>`).join('')}</div>` : '');
+  const F = S.forecasts; if (!F) return;
+  const errs = Object.keys(F.source_errors || {});
+  $('fchdr').textContent = `${F.priced} priced · buys at ${Math.round(F.min_edge * 100)}¢+ edge${errs.length ? ' · down: ' + errs.join(', ') : ''}`;
+  $('fcboard').innerHTML = (F.board || []).slice(0, 8).map(r => `<div class="card"><div class="row"><span style="font-size:12.5px">${esc(r.title)}</span><span class="sp"></span>
+      ${r.edge != null ? `<b class="mono ${r.edge >= F.min_edge ? 'g' : ''}" style="font-size:12px">${r.side ? r.side.toUpperCase() : ''} ${r.edge >= 0 ? '+' : ''}${Math.round(r.edge * 100)}¢</b>` : ''}</div>
+      <div class="dim mono" style="font-size:10.5px;margin-top:3px">model ${Math.round(r.p_yes * 100)}¢ · fair ${Math.round(r.fair_yes * 100)}¢ · yes ask ${r.yes_ask != null ? Math.round(r.yes_ask * 100) + '¢' : '—'}</div>
+      <div class="dim" style="font-size:11px">${esc(r.why)}</div></div>`).join('')
+    || '<div class="empty">No weather or economy markets priced yet (first sweep runs a minute after start).</div>';
 }
 function toggleDesk() { act('desk', {on: !S.desk.enabled}); }
 function exitLine(p) {
